@@ -155,6 +155,33 @@ npm run build
 
 This creates a `build/` directory with optimized production files.
 
+### Docker Workflow
+
+1. **Build the image**
+   ```bash
+   docker build -t talentflow:latest .
+   ```
+2. **Run the container**
+   ```bash
+   docker run --rm -p 8080:80 talentflow:latest
+   ```
+3. Open `http://localhost:8080` to access the SPA served by Nginx. The Docker image uses a multi-stage build so that the final layer only contains the static assets plus the lightweight Nginx runtime.
+
+### Jenkins CI/CD
+
+This repo includes a declarative `Jenkinsfile` that:
+
+1. Checks out the repo, runs `npm ci`, executes the React tests in CI mode, and builds the production bundle.
+2. Builds a Docker image with the same steps as the local Dockerfile.
+3. Optionally pushes the image when `PUSH_IMAGE=true` (default) using the `dockerhub-creds` Jenkins credential.
+4. Optionally triggers a deployment hook when `AUTO_DEPLOY=true` (replace the placeholder command with your real deploy script).
+
+**Jenkins prerequisites**
+- Linux agent with Node.js 18+, npm, and Docker CLI access.
+- Jenkins credential `dockerhub-creds` (username + password/token).
+- Parameter `IMAGE_NAME` set to your Docker registry repository (e.g., `your-user/talentflow`).
+- Deployment script/command available to the agent if you enable the Deploy stage.
+
 ### Netlify deployment
 
 1. Connect repo: New Site → Import from Git → choose `PathaSnehith/Talentflow`.
