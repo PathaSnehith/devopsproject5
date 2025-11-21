@@ -3,7 +3,6 @@ pipeline {
 
   options {
     timestamps()
-    ansiColor('xterm')
     disableConcurrentBuilds()
   }
 
@@ -27,29 +26,37 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        sh 'npm ci'
+        ansiColor('xterm') {
+          sh 'npm ci'
+        }
       }
     }
 
     stage('Test') {
       steps {
-        sh 'CI=true npm test -- --watch=false'
+        ansiColor('xterm') {
+          sh 'CI=true npm test -- --watch=false'
+        }
       }
     }
 
     stage('Build') {
       steps {
-        sh 'npm run build'
+        ansiColor('xterm') {
+          sh 'npm run build'
+        }
       }
     }
 
     stage('Docker Build') {
       steps {
-        sh '''
-          docker build \
-            -t ${params.IMAGE_NAME}:${IMAGE_TAG} \
-            .
-        '''
+        ansiColor('xterm') {
+          sh '''
+            docker build \
+              -t ${params.IMAGE_NAME}:${IMAGE_TAG} \
+              .
+          '''
+        }
       }
     }
 
@@ -58,10 +65,12 @@ pipeline {
         expression { params.PUSH_IMAGE }
       }
       steps {
-        sh '''
-          echo "${DOCKERHUB_PSW}" | docker login -u "${DOCKERHUB_USR}" --password-stdin
-          docker push ${params.IMAGE_NAME}:${IMAGE_TAG}
-        '''
+        ansiColor('xterm') {
+          sh '''
+            echo "${DOCKERHUB_PSW}" | docker login -u "${DOCKERHUB_USR}" --password-stdin
+            docker push ${params.IMAGE_NAME}:${IMAGE_TAG}
+          '''
+        }
       }
     }
 
@@ -70,19 +79,22 @@ pipeline {
         expression { params.PUSH_IMAGE && params.AUTO_DEPLOY }
       }
       steps {
-        sh '''
-          echo "Deploying ${params.IMAGE_NAME}:${IMAGE_TAG}"
-          # TODO: invoke your deployment script/command here.
-        '''
+        ansiColor('xterm') {
+          sh '''
+            echo "Deploying ${params.IMAGE_NAME}:${IMAGE_TAG}"
+            # TODO: invoke your deployment script/command here.
+          '''
+        }
       }
     }
   }
 
   post {
     always {
-      sh 'docker logout || true'
-      cleanWs()
+      ansiColor('xterm') {
+        sh 'docker logout || true'
+        cleanWs()
+      }
     }
   }
 }
-
