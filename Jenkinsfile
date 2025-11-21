@@ -6,95 +6,49 @@ pipeline {
     disableConcurrentBuilds()
   }
 
-  parameters {
-    string(name: 'IMAGE_NAME', defaultValue: 'your-docker-user/talentflow', description: 'Target Docker registry repo')
-    booleanParam(name: 'PUSH_IMAGE', defaultValue: true, description: 'Push the built image to the registry')
-    booleanParam(name: 'AUTO_DEPLOY', defaultValue: false, description: 'Trigger the deploy stage after a successful push')
-  }
-
-  environment {
-    DOCKERHUB = credentials('dockerhub-creds')
-    IMAGE_TAG = "${env.BUILD_NUMBER}"
-  }
-
   stages {
+    stage('Info') {
+      steps {
+        script {
+          echo "=== Pipeline test - simple info ==="
+          echo "Job: ${env.JOB_NAME}"
+          echo "Branch/Commit: see built-in git info below"
+          echo "Running on node: ${env.NODE_NAME}"
+          echo "Workspace: ${pwd()}"
+        }
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Platform check and simple command') {
       steps {
-        ansiColor('xterm') {
-          sh 'npm ci'
+        script {
+          if (isUnix()) {
+            echo "Detected Unix-like node — running sh"
+            sh 'echo "hello from sh"; uname -a || true'
+          } else {
+            echo "Detected Windows node — running bat"
+            bat 'echo hello from bat & ver'
+          }
         }
       }
     }
 
-    stage('Test') {
+    stage('Simple echo stage') {
       steps {
-        ansiColor('xterm') {
-          sh 'CI=true npm test -- --watch=false'
-        }
-      }
-    }
-
-    stage('Build') {
-      steps {
-        ansiColor('xterm') {
-          sh 'npm run build'
-        }
-      }
-    }
-
-    stage('Docker Build') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            docker build \
-              -t ${params.IMAGE_NAME}:${IMAGE_TAG} \
-              .
-          '''
-        }
-      }
-    }
-
-    stage('Docker Push') {
-      when {
-        expression { params.PUSH_IMAGE }
-      }
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            echo "${DOCKERHUB_PSW}" | docker login -u "${DOCKERHUB_USR}" --password-stdin
-            docker push ${params.IMAGE_NAME}:${IMAGE_TAG}
-          '''
-        }
-      }
-    }
-
-    stage('Deploy') {
-      when {
-        expression { params.PUSH_IMAGE && params.AUTO_DEPLOY }
-      }
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            echo "Deploying ${params.IMAGE_NAME}:${IMAGE_TAG}"
-            # TODO: invoke your deployment script/command here.
-          '''
-        }
+        echo 'If you see this, stages are executing properly.'
       }
     }
   }
 
   post {
     always {
-      ansiColor('xterm') {
-        sh 'docker logout || true'
-        cleanWs()
-      }
+      cleanWs()
     }
   }
 }
